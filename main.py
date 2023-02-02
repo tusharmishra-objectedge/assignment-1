@@ -35,7 +35,7 @@ class Customer(Base):
     )
 
     def __repr__(self) -> str:
-        return f'table - customer pkey[{self.first_name} {self.last_name}]'
+        return f'table - customer p-key[{self.first_name} {self.last_name}]'
 
 
 # create operation
