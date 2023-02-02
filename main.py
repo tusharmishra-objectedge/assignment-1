@@ -67,3 +67,6 @@ session.execute(delete(Customer).where(Customer.first_name.in_(["object", 'O']))
 
 # committing changes
 session.commit()
+
+# closing session
+session.close()
