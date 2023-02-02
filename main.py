@@ -2,7 +2,6 @@ import configparser
 
 from sqlalchemy import Table
 from sqlalchemy import create_engine, text
-# from sqlalchemy import insert, select, update, delete
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session
 
@@ -53,7 +52,7 @@ session.execute(text(
     "UPDATE customer SET dob='31/07/1994', address='Walnut Creek, United States', created_by='1994-07-31T00:00:00', updated_by='2023-09-24T10:20:30' WHERE first_name='O' and last_name='E'"))
 
 # delete operation
-# session.execute(text("DELETE FROM customer WHERE first_name in ('object', 'O')"))
+session.execute(text("DELETE FROM customer WHERE first_name in ('object', 'O')"))
 
 # committing changes
 session.commit()
