@@ -1,11 +1,10 @@
-from sqlalchemy import create_engine
-from sqlalchemy import Table
-from sqlalchemy import insert, select, update, delete
-
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import DeclarativeBase
-
 import configparser
+
+from sqlalchemy import Table
+from sqlalchemy import create_engine
+from sqlalchemy import insert, select, update, delete
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Session
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -19,11 +18,8 @@ database_name = config['database']['database_name']
 # Create a connection to the database
 engine = create_engine(f'postgresql://{username}:{password}@{host}:{port}/{database_name}', echo=0)
 
-# Create a session factory
-Session = sessionmaker(bind=engine)
-
 # Create a session
-session = Session()
+session = Session(bind=engine)
 
 
 class Base(DeclarativeBase):
@@ -38,6 +34,9 @@ class Customer(Base):
         autoload_with=engine,
     )
 
+    def __repr__(self) -> str:
+        return f'table - customer pkey[{self.first_name} {self.last_name}]'
+
 
 # create operation
 session.execute(
@@ -50,8 +49,10 @@ session.execute(
     ])
 
 # read operation
-res = session.execute(select('*').where(Customer.first_name == "O"))
-print(res.all())
+res = session.scalars(select(Customer))
+
+for user in res:
+    print(user)
 
 # update operation
 session.execute(
