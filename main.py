@@ -1,8 +1,8 @@
 import configparser
 
 from sqlalchemy import Table
-from sqlalchemy import create_engine
-from sqlalchemy import insert, select, update, delete
+from sqlalchemy import create_engine, text
+# from sqlalchemy import insert, select, update, delete
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session
 
@@ -39,31 +39,21 @@ class Customer(Base):
 
 
 # create operation
-session.execute(
-    insert(Customer),
-    [
-        {"first_name": "object", "last_name": "edge", "dob": "15.07.2000", "address": "navi mumbai",
-         "created_by": "2018-09-24T00:00:00", "updated_by": "2019-09-24T00:00:00"},
-        {'first_name': 'O', 'last_name': 'E', 'dob': '15/07/1994', 'address': 'thane',
-         'created_by': '2018-09-24T00:00:00', 'updated_by': '2019-09-24T10:20:30'},
-    ])
+session.execute(text(
+    "INSERT INTO customer (first_name, last_name, dob, address, created_by, updated_by) VALUES ('object', 'edge', '15.07.2000', 'navi mumbai', '2018-09-24T00:00:00', '2019-09-24T00:00:00'), ('O', 'E', '15/07/1994', 'thane', '2018-09-24T00:00:00', '2019-09-24T10:20:30')"))
 
 # read operation
-res = session.scalars(select(Customer))
+res = session.execute(text("SELECT * FROM customer"))
 
-for user in res:
-    print(user)
+for row in res:
+    print(row)
 
 # update operation
-session.execute(
-    update(Customer),
-    [
-        {'first_name': 'O', 'last_name': 'E', 'dob': '31/07/1994', 'address': 'Walnut Creek, United States',
-         'created_by': '1994-07-31T00:00:00', 'updated_by': '2023-09-24T10:20:30'},
-    ])
+session.execute(text(
+    "UPDATE customer SET dob='31/07/1994', address='Walnut Creek, United States', created_by='1994-07-31T00:00:00', updated_by='2023-09-24T10:20:30' WHERE first_name='O' and last_name='E'"))
 
 # delete operation
-session.execute(delete(Customer).where(Customer.first_name.in_(["object", 'O'])))
+# session.execute(text("DELETE FROM customer WHERE first_name in ('object', 'O')"))
 
 # committing changes
 session.commit()
