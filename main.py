@@ -1,9 +1,12 @@
 import configparser
+import logging
 
 from sqlalchemy import Table
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session
+
+logging.basicConfig(level=logging.CRITICAL)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -48,7 +51,7 @@ try:
             )
         )
     except Exception as e:
-        print("Error during create operation:", e)
+        logging.critical("Error during create operation:", e)
         session.rollback()
 
     # read operation
@@ -57,7 +60,7 @@ try:
         for row in res:
             print(row)
     except Exception as e:
-        print("Error during read operation:", e)
+        logging.critical("Error during read operation:", e)
         session.rollback()
 
     # update operation
@@ -68,7 +71,7 @@ try:
             )
         )
     except Exception as e:
-        print("Error during update operation:", e)
+        logging.critical("Error during update operation:", e)
         session.rollback()
 
     # delete operation
@@ -77,18 +80,18 @@ try:
             text("DELETE FROM customer WHERE first_name in ('object', 'O')")
         )
     except Exception as e:
-        print("Error during delete operation:", e)
+        logging.critical("Error during delete operation:", e)
         session.rollback()
 
     # committing changes
     try:
         session.commit()
     except Exception as e:
-        print("Error during commit:", e)
+        logging.critical("Error during commit:", e)
         session.rollback()
 
 except Exception as e:
-    print("An unknown error occurred:", e)
+    logging.critical("An unknown error occurred:", e)
     session.rollback()
 
 finally:
