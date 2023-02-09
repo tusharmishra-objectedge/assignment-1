@@ -6,16 +6,18 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read("config.ini")
 
-host = config['DEFAULT']['host']
-port = config['DEFAULT']['port']
-username = config['database']['username']
-password = config['database']['password']
-database_name = config['database']['database_name']
+host = config["DEFAULT"]["host"]
+port = config["DEFAULT"]["port"]
+username = config["database"]["username"]
+password = config["database"]["password"]
+database_name = config["database"]["database_name"]
 
 # Create a connection to the database
-engine = create_engine(f'postgresql://{username}:{password}@{host}:{port}/{database_name}', echo=0)
+engine = create_engine(
+    f"postgresql://{username}:{password}@{host}:{port}/{database_name}", echo=0
+)
 
 # Create a session
 session = Session(bind=engine)
@@ -34,14 +36,17 @@ class Customer(Base):
     )
 
     def __repr__(self) -> str:
-        return f'table - customer p-key[{self.first_name} {self.last_name}]'
+        return f"table - customer p-key[{self.first_name} {self.last_name}]"
 
 
 try:
     # create operation
     try:
-        session.execute(text(
-            "INSERT INTO customer (first_name, last_name, dob, address, created_by, updated_by) VALUES ('object', 'edge', '15.07.2000', 'navi mumbai', '2018-09-24T00:00:00', '2019-09-24T00:00:00'), ('O', 'E', '15/07/1994', 'thane', '2018-09-24T00:00:00', '2019-09-24T10:20:30')"))
+        session.execute(
+            text(
+                "INSERT INTO customer (first_name, last_name, dob, address, created_by, updated_by) VALUES ('object', 'edge', '15.07.2000', 'navi mumbai', '2018-09-24T00:00:00', '2019-09-24T00:00:00'), ('O', 'E', '15/07/1994', 'thane', '2018-09-24T00:00:00', '2019-09-24T10:20:30')"
+            )
+        )
     except Exception as e:
         print("Error during create operation:", e)
         session.rollback()
@@ -57,15 +62,20 @@ try:
 
     # update operation
     try:
-        session.execute(text(
-            "UPDATE customer SET dob='31/07/1994', address='Walnut Creek, United States', created_by='1994-07-31T00:00:00', updated_by='2023-09-24T10:20:30' WHERE first_name='O' and last_name='E'"))
+        session.execute(
+            text(
+                "UPDATE customer SET dob='31/07/1994', address='Walnut Creek, United States', created_by='1994-07-31T00:00:00', updated_by='2023-09-24T10:20:30' WHERE first_name='O' and last_name='E'"
+            )
+        )
     except Exception as e:
         print("Error during update operation:", e)
         session.rollback()
 
     # delete operation
     try:
-        session.execute(text("DELETE FROM customer WHERE first_name in ('object', 'O')"))
+        session.execute(
+            text("DELETE FROM customer WHERE first_name in ('object', 'O')")
+        )
     except Exception as e:
         print("Error during delete operation:", e)
         session.rollback()
