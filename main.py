@@ -1,8 +1,9 @@
+import click
 import configparser
 import logging
-
 from sqlalchemy import Table
-from sqlalchemy import create_engine, text
+from sqlalchemy import insert
+from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session
 
@@ -42,57 +43,28 @@ class Customer(Base):
         return f"table - customer p-key[{self.first_name} {self.last_name}]"
 
 
-try:
-    # create operation
+@click.command()
+@click.option("--first_name", prompt="Your first name", required=True, type=str)
+@click.option("--last_name", prompt="Your last name", required=True, type=str)
+@click.option(
+    "--dob",
+    prompt="Your DOB in DD-MM-YY format",
+    required=True,
+    type=click.DateTime(formats=["%d-%m-%Y"]),
+)
+def main(first_name, last_name, dob):
     try:
         session.execute(
-            text(
-                "INSERT INTO customer (first_name, last_name, dob, address, created_by, updated_by) VALUES ('object', 'edge', '15.07.2000', 'navi mumbai', '2018-09-24T00:00:00', '2019-09-24T00:00:00'), ('O', 'E', '15/07/1994', 'thane', '2018-09-24T00:00:00', '2019-09-24T10:20:30')"
-            )
+            insert(Customer).values(first_name=first_name, last_name=last_name, dob=dob)
         )
     except Exception as e:
-        logging.critical("Error during create operation:", e)
+        logging.critical(f"Failed to insert data due to {e}")
         session.rollback()
-
-    # read operation
-    try:
-        res = session.execute(text("SELECT * FROM customer"))
-        for row in res:
-            print(row)
-    except Exception as e:
-        logging.critical("Error during read operation:", e)
-        session.rollback()
-
-    # update operation
-    try:
-        session.execute(
-            text(
-                "UPDATE customer SET dob='31/07/1994', address='Walnut Creek, United States', created_by='1994-07-31T00:00:00', updated_by='2023-09-24T10:20:30' WHERE first_name='O' and last_name='E'"
-            )
-        )
-    except Exception as e:
-        logging.critical("Error during update operation:", e)
-        session.rollback()
-
-    # delete operation
-    try:
-        session.execute(
-            text("DELETE FROM customer WHERE first_name in ('object', 'O')")
-        )
-    except Exception as e:
-        logging.critical("Error during delete operation:", e)
-        session.rollback()
-
-    # committing changes
-    try:
+    else:
         session.commit()
-    except Exception as e:
-        logging.critical("Error during commit:", e)
-        session.rollback()
+    finally:
+        session.close()
 
-except Exception as e:
-    logging.critical("An unknown error occurred:", e)
-    session.rollback()
 
-finally:
-    session.close()
+if __name__ == "__main__":
+    main()
