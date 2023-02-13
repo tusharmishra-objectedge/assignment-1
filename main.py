@@ -52,7 +52,7 @@ class Customer(Base):
     required=True,
     type=click.DateTime(formats=["%d-%m-%Y"]),
 )
-def main(first_name, last_name, dob):
+def insert_data(first_name, last_name, dob):
     try:
         session.execute(
             insert(Customer).values(first_name=first_name, last_name=last_name, dob=dob)
