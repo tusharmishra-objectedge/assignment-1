@@ -88,10 +88,10 @@ def u(first_name, last_name, dob, address):
         logging.info(f"Performing Update operation")
         session.execute(
             update(Customer).where(
-                Customer.first_name == first_name,
-                Customer.last_name == last_name,
-                Customer.dob == dob,
-                Customer.address == address,
+                Customer.first_name == first_name if first_name else True,
+                Customer.last_name == last_name if first_name else True,
+            ).values(
+                dob=dob, address=address
             )
         )
     except Exception as e:
