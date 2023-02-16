@@ -1,11 +1,7 @@
 import click
 import configparser
 import logging
-from sqlalchemy import Table
-from sqlalchemy import insert, select, update, delete
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Session
+import psycopg2
 
 logging.basicConfig(level=logging.CRITICAL)
 
@@ -19,113 +15,95 @@ password = config["database"]["password"]
 database_name = config["database"]["database_name"]
 
 # Create a connection to the database
-engine = create_engine(
-    f"postgresql://{username}:{password}@{host}:{port}/{database_name}", echo=0
+conn = psycopg2.connect(
+    host=host, port=port, user=username, password=password, database=database_name
 )
 
-# Create a session
-session = Session(bind=engine)
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-# mapping with db
-class Customer(Base):
-    __table__ = Table(
-        "customer",
-        Base.metadata,
-        autoload_with=engine,
-    )
-
-    def __repr__(self) -> str:
-        return f"table - customer p-key[{self.first_name} {self.last_name}]"
+cur = conn.cursor()
 
 
 def c(first_name, last_name, dob, address):
     try:
         logging.info(f"Performing Create operation")
-        session.execute(
-            insert(Customer).values(
-                first_name=first_name, last_name=last_name, dob=dob, address=address
-            )
-        )
+        insert_query = f"INSERT INTO customer (first_name, last_name, dob, address) VALUES ('{first_name}', '{last_name}', '{dob}', '{address}');"
+        cur.execute(insert_query)
     except Exception as e:
-        logging.exception(f"Failed to insert data due to {e}")
-        session.rollback()
+        print(f"Failed to insert data due to {e}")
+        conn.rollback()
     else:
-        session.commit()
+        conn.commit()
         logging.info(f"Committed Create operation")
     finally:
-        session.close()
-        logging.info(f"Closed the session")
+        cur.close()
+        conn.close()
+        logging.info(f"Closed the connection")
 
 
 def r(first_name, last_name, dob, address):
     try:
         logging.info(f"Performing Read operation")
-        query = select(Customer)
-        if first_name or last_name or dob or address:
-            query = select(Customer).where(
-                Customer.first_name == first_name if first_name else True,
-                Customer.last_name == last_name if last_name else True,
-                Customer.dob == dob if dob else True,
-                Customer.address == address if address else True,
-            )
-        cust = session.scalars(query)
-        print(cust.all())
+        select_query = f"SELECT * FROM customer WHERE 1=1"
+        if first_name:
+            select_query += f" AND first_name = '{first_name}'"
+        if last_name:
+            select_query += f" AND last_name = '{last_name}'"
+        if dob:
+            select_query += f" AND dob = '{dob}'"
+        if address:
+            select_query += f" AND address = '{address}'"
+        cur.execute(select_query)
+        result = cur.fetchall()
+        for row in result:
+            print(f"{row[0]} {row[1]} {row[2]} {row[3]}")
     except Exception as e:
         logging.exception(f"Failed to read data due to {e}")
-        session.rollback()
+        conn.rollback()
     finally:
-        session.close()
-        logging.info(f"Closed the session")
+        cur.close()
+        conn.close()
+        logging.info(f"Closed the connection")
 
 
 def u(first_name, last_name, dob, address):
     try:
         logging.info(f"Performing Update operation")
-        session.execute(
-            update(Customer).where(
-                Customer.first_name == first_name if first_name else True,
-                Customer.last_name == last_name if first_name else True,
-            ).values(
-                dob=dob, address=address
-            )
-        )
+        update_query = f"UPDATE customer SET dob='{dob}', address='{address}' WHERE first_name='{first_name}' AND last_name='{last_name}'"
+        cur.execute(update_query)
     except Exception as e:
         logging.exception(f"Failed to update data due to {e}")
-        session.rollback()
+        conn.rollback()
     else:
-        session.commit()
+        conn.commit()
         logging.info(f"Committed Update operation")
     finally:
-        session.close()
-        logging.info(f"Closed the session")
+        cur.close()
+        conn.close()
+        logging.info(f"Closed the connection")
 
 
 def d(first_name, last_name, dob, address):
     try:
         logging.info(f"Performing Delete operation")
-        query = delete(Customer)
-        if first_name or last_name or dob or address:
-            query = delete(Customer).where(
-                Customer.first_name == first_name if first_name else True,
-                Customer.last_name == last_name if last_name else True,
-                Customer.dob == dob if dob else True,
-                Customer.address == address if address else True,
-            )
-        session.execute(query)
+        delete_query = f"DELETE FROM customer WHERE 1=1"
+        if first_name:
+            delete_query += f" AND first_name = '{first_name}'"
+        if last_name:
+            delete_query += f" AND last_name = '{last_name}'"
+        if dob:
+            delete_query += f" AND dob = '{dob}'"
+        if address:
+            delete_query += f" AND address = '{address}'"
+        cur.execute(delete_query)
     except Exception as e:
         logging.exception(f"Failed to delete data due to {e}")
-        session.rollback()
+        conn.rollback()
     else:
-        session.commit()
+        conn.commit()
         logging.info(f"Committed Delete operation")
     finally:
-        session.close()
-        logging.info(f"Closed the session")
+        cur.close()
+        conn.close()
+        logging.info(f"Closed the connection")
 
 
 if __name__ == "__main__":
