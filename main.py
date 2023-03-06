@@ -3,7 +3,7 @@ import configparser
 import logging
 import psycopg2
 
-logging.basicConfig(level=logging.CRITICAL)
+logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
