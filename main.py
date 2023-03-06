@@ -1,7 +1,9 @@
 import click
 import configparser
 import logging
-import psycopg2
+from sqlalchemy import create_engine, Column, Integer, String, Date
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,96 +16,104 @@ username = config["database"]["username"]
 password = config["database"]["password"]
 database_name = config["database"]["database_name"]
 
-# Create a connection to the database
-conn = psycopg2.connect(
-    host=host, port=port, user=username, password=password, database=database_name
+engine = create_engine(
+    f"postgresql://{username}:{password}@{host}:{port}/{database_name}"
 )
+Session = sessionmaker(bind=engine)
 
-cur = conn.cursor()
+Base = declarative_base()
+
+
+class Customer(Base):
+    __tablename__ = "customer"
+
+    id = Column(Integer, primary_key=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    dob = Column(Date)
+    address = Column(String)
+
+    def __repr__(self):
+        return f"<Customer(first_name={self.first_name}, last_name={self.last_name}, dob={self.dob}, address={self.address})>"
+
+
+def execute_query(query, params=None, fetch=False):
+    result = None
+
+    try:
+        session = Session()
+        result = session.execute(query, params)
+        if fetch:
+            result = result.fetchall()
+        else:
+            session.commit()
+    except Exception as e:
+        logging.exception(
+            f"Failed to execute query {query} with params {params} due to {e}"
+        )
+
+        session.rollback()
+    finally:
+        session.close()
+
+    return result
 
 
 def c(first_name, last_name, dob, address):
-    try:
-        logging.info(f"Performing Create operation")
-        insert_query = f"INSERT INTO customer (first_name, last_name, dob, address) VALUES ('{first_name}', '{last_name}', '{dob}', '{address}');"
-        cur.execute(insert_query)
-    except Exception as e:
-        print(f"Failed to insert data due to {e}")
-        conn.rollback()
-    else:
-        conn.commit()
-        logging.info(f"Committed Create operation")
-    finally:
-        cur.close()
-        conn.close()
-        logging.info(f"Closed the connection")
+    customer = Customer(
+        first_name=first_name, last_name=last_name, dob=dob, address=address
+    )
+    session = Session()
+    session.add(customer)
+    session.commit()
+    session.close()
 
 
-def r(first_name, last_name, dob, address):
-    try:
-        logging.info(f"Performing Read operation")
-        select_query = f"SELECT * FROM customer WHERE 1=1"
-        if first_name:
-            select_query += f" AND first_name = '{first_name}'"
-        if last_name:
-            select_query += f" AND last_name = '{last_name}'"
-        if dob:
-            select_query += f" AND dob = '{dob}'"
-        if address:
-            select_query += f" AND address = '{address}'"
-        cur.execute(select_query)
-        result = cur.fetchall()
-        for row in result:
-            print(f"{row[0]} {row[1]} {row[2]} {row[3]}")
-    except Exception as e:
-        logging.exception(f"Failed to read data due to {e}")
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
-        logging.info(f"Closed the connection")
+def r(first_name=None, last_name=None, dob=None, address=None):
+    query = "SELECT * FROM customer WHERE 1=1"
+    params = {}
+    if first_name:
+        query += " AND first_name = :first_name"
+        params["first_name"] = first_name
+    if last_name:
+        query += " AND last_name = :last_name"
+        params["last_name"] = last_name
+    if dob:
+        query += " AND dob = :dob"
+        params["dob"] = dob
+    if address:
+        query += " AND address = :address"
+        params["address"] = address
+    return execute_query(query, params=params, fetch=True)
 
 
 def u(first_name, last_name, dob, address):
-    try:
-        logging.info(f"Performing Update operation")
-        update_query = f"UPDATE customer SET dob='{dob}', address='{address}' WHERE first_name='{first_name}' AND last_name='{last_name}'"
-        cur.execute(update_query)
-    except Exception as e:
-        logging.exception(f"Failed to update data due to {e}")
-        conn.rollback()
-    else:
-        conn.commit()
-        logging.info(f"Committed Update operation")
-    finally:
-        cur.close()
-        conn.close()
-        logging.info(f"Closed the connection")
+    query = "UPDATE customer SET dob=:dob, address=:address WHERE first_name=:first_name AND last_name=:last_name"
+    params = {
+        "dob": dob,
+        "address": address,
+        "first_name": first_name,
+        "last_name": last_name,
+    }
+    execute_query(query, params=params)
 
 
-def d(first_name, last_name, dob, address):
-    try:
-        logging.info(f"Performing Delete operation")
-        delete_query = f"DELETE FROM customer WHERE 1=1"
-        if first_name:
-            delete_query += f" AND first_name = '{first_name}'"
-        if last_name:
-            delete_query += f" AND last_name = '{last_name}'"
-        if dob:
-            delete_query += f" AND dob = '{dob}'"
-        if address:
-            delete_query += f" AND address = '{address}'"
-        cur.execute(delete_query)
-    except Exception as e:
-        logging.exception(f"Failed to delete data due to {e}")
-        conn.rollback()
-    else:
-        conn.commit()
-        logging.info(f"Committed Delete operation")
-    finally:
-        cur.close()
-        conn.close()
-        logging.info(f"Closed the connection")
+def d(first_name=None, last_name=None, dob=None, address=None):
+    query = "DELETE FROM customer WHERE 1=1"
+    params = {}
+    if first_name:
+        query += " AND first_name = :first_name"
+        params["first_name"] = first_name
+    if last_name:
+        query += " AND last_name = :last_name"
+        params["last_name"] = last_name
+    if dob:
+        query += " AND dob = :dob"
+        params["dob"] = dob
+    if address:
+        query += " AND address = :address"
+        params["address"] = address
+    execute_query(query, params=params)
 
 
 if __name__ == "__main__":
